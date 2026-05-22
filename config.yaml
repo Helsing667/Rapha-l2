@@ -101,10 +101,20 @@ mobile:
   # Méthode de connexion (ssh ou api)
   connection_method: "ssh"
   
+  # IMPORTANT: Remplacez 'PHONE_IP_ADDRESS' par l'IP réelle de votre téléphone
+  # Pour trouver l'IP de votre téléphone :
+  #   - Sur Termux: tapez 'ifconfig' ou 'ip addr'
+  #   - Dans les paramètres Android: Paramètres > À propos du téléphone > État > Adresse IP
+  #   - Ou depuis votre PC: scannez le réseau avec 'nmap -sn 192.168.1.0/24'
+  phone_ip: "PHONE_IP_ADDRESS"  # <-- MODIFIEZ CECI
+  
   # Configuration SSH
   ssh:
-    # Port SSH par défaut
-    port: 22
+    # Hôte (IP du téléphone)
+    host: "PHONE_IP_ADDRESS"  # <-- MODIFIEZ CECI avec l'IP de votre téléphone
+    
+    # Port SSH par défaut (8022 pour Termux, 22 pour SSH standard)
+    port: 8022
     
     # Timeout de connexion (en secondes)
     timeout: 30

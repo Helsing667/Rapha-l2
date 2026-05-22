@@ -67,6 +67,57 @@ Le fichier `config.yaml` contient les paramètres modifiables :
 - Configuration API Mistral
 - Paramètres de connexion mobile
 
+### Configuration rapide de la connexion mobile
+
+Pour configurer automatiquement l'adresse IP de votre téléphone, utilisez le script dédié :
+
+```bash
+./scripts/configure_phone.sh
+```
+
+Ce script vous guidera pour :
+1. Trouver l'IP de votre téléphone
+2. Mettre à jour automatiquement `config.yaml`
+3. Vous donner les instructions pour configurer SSH sur Termux
+
+### Configuration manuelle de la connexion mobile
+
+1. **Trouver l'IP de votre téléphone :**
+   - Sur Termux : `ifconfig` ou `ip addr`
+   - Dans les paramètres Android : Paramètres > À propos > État > Adresse IP
+   - Depuis votre PC : `nmap -sn 192.168.1.0/24`
+
+2. **Modifier `config.yaml` :**
+   ```yaml
+   mobile:
+     phone_ip: "192.168.1.XX"  # Remplacez par l'IP réelle de votre téléphone
+     ssh:
+       host: "192.168.1.XX"    # Doit correspondre à phone_ip
+       port: 8022              # Port SSH de Termux (par défaut)
+   ```
+
+3. **Configurer SSH sur Termux (téléphone) :**
+   ```bash
+   pkg install openssh
+   ssh-keygen -t ed25519
+   sshd
+   ```
+
+4. **Copier la clé publique du téléphone vers votre PC :**
+   ```bash
+   # Sur le téléphone (Termux), affichez la clé publique
+   cat ~/.ssh/id_ed25519.pub
+   
+   # Copiez cette clé dans ~/.ssh/authorized_keys sur votre PC
+   ```
+
+5. **Tester la connexion :**
+   ```bash
+   ssh -p 8022 u0_a123@192.168.1.XX
+   ```
+
+**Important :** Le port SSH par défaut pour Termux est **8022**, pas 22. Si vous utilisez un autre serveur SSH sur Android, ajustez le port dans `config.yaml`.
+
 ### Configuration de la clé API Mistral
 
 La clé API doit être stockée de manière sécurisée :
