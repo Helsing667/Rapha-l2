@@ -1,3 +1,40 @@
+Metadata-Version: 2.4
+Name: nexus-core
+Version: 1.0.0
+Summary: IA centrale orchestratrice multi-plateformes avec sécurité renforcée
+Author-email: Nexus Core Team <nexus@example.com>
+License: MIT
+Classifier: Development Status :: 4 - Beta
+Classifier: Intended Audience :: Developers
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Operating System :: POSIX :: Linux
+Classifier: Programming Language :: Python :: 3.10
+Classifier: Programming Language :: Python :: 3.11
+Classifier: Topic :: Security
+Classifier: Topic :: System :: Automation
+Requires-Python: >=3.10
+Description-Content-Type: text/markdown
+Requires-Dist: spacy>=3.5.0
+Requires-Dist: networkx>=3.0
+Requires-Dist: psutil>=5.9.0
+Requires-Dist: PyNaCl>=1.5.0
+Requires-Dist: structlog>=23.1.0
+Requires-Dist: pyyaml>=6.0
+Requires-Dist: cryptography>=41.0.0
+Requires-Dist: keyring>=24.0.0
+Requires-Dist: requests>=2.31.0
+Requires-Dist: scikit-learn>=1.3.0
+Requires-Dist: pytest>=7.4.0
+Requires-Dist: pytest-asyncio>=0.21.0
+Provides-Extra: dev
+Requires-Dist: black>=23.0.0; extra == "dev"
+Requires-Dist: flake8>=6.0.0; extra == "dev"
+Requires-Dist: mypy>=1.5.0; extra == "dev"
+Requires-Dist: coverage>=7.0.0; extra == "dev"
+Provides-Extra: mobile
+Requires-Dist: paramiko>=3.3.0; extra == "mobile"
+Requires-Dist: asyncssh>=2.13.0; extra == "mobile"
+
 # Nexus Core - IA Centrale Multi-Plateformes
 
 ## Vue d'ensemble
@@ -36,27 +73,18 @@ chmod +x setup.sh
 
 1. Installer les dépendances système :
 ```bash
-sudo apt-get install -y bubblewrap libsodium-dev openssh-client python3-venv
+sudo apt-get install -y bubblewrap libsodium-dev openssh-client
 ```
 
-2. Créer et activer un environnement virtuel (requis sur Ubuntu 22.04+ avec PEP 668) :
+2. Installer les dépendances Python :
 ```bash
-python3 -m venv .venv
-source .venv/bin/activate
-```
-
-3. Installer les dépendances Python :
-```bash
-pip install --upgrade pip
 pip install -e .
 ```
 
-4. Pour le support mobile :
+3. Pour le support mobile :
 ```bash
 pip install -e ".[mobile]"
 ```
-
-**Note :** Sur les versions récentes d'Ubuntu (22.04+), Python est marqué comme "externally managed" (PEP 668). Il est donc **obligatoire** d'utiliser un environnement virtuel pour installer des paquets Python. Le script `setup.sh` crée automatiquement cet environnement.
 
 ## Configuration
 

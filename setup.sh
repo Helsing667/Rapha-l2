@@ -47,12 +47,15 @@ sudo apt-get install -y -qq \
     curl
 
 echo "[3/5] Création de l'environnement virtuel..."
-if [ ! -d "venv" ]; then
-    python3 -m venv venv
+if [ ! -d ".venv" ]; then
+    python3 -m venv .venv
+    echo "Environnement virtuel créé dans .venv/"
+else
+    echo "Environnement virtuel déjà existant"
 fi
 
 echo "[4/5] Activation et installation des dépendances Python..."
-source venv/bin/activate
+source .venv/bin/activate
 pip install --upgrade pip -q
 pip install -e . -q
 
@@ -72,7 +75,7 @@ echo "Installation terminée avec succès !"
 echo "========================================="
 echo ""
 echo "Pour activer l'environnement virtuel :"
-echo "  source venv/bin/activate"
+echo "  source .venv/bin/activate"
 echo ""
 echo "Pour configurer la clé API Mistral :"
 echo "  python -c \"import keyring; keyring.set_password('nexus_core', 'mistral_api_key', 'VOTRE_CLE')\""
