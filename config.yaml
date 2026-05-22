@@ -1,0 +1,245 @@
+# Configuration de Nexus Core
+# Ce fichier contient les paramètres modifiables de l'application
+
+# =============================================================================
+# PARAMÈTRES SYSTÈME
+# =============================================================================
+system:
+  # Chemin pour les logs d'audit (opérations sensibles)
+  audit_log_path: "/var/log/nexus/audit.log"
+  
+  # Chemin pour les logs opérationnels (débogage)
+  operations_log_path: "/var/log/nexus/operations.log"
+  
+  # Niveau de log (DEBUG, INFO, WARNING, ERROR, CRITICAL)
+  log_level: "INFO"
+  
+  # Activer le chiffrement des logs
+  encrypt_logs: true
+  
+  # Rotation des logs (en jours)
+  log_rotation_days: 7
+  
+  # Taille maximale des logs avant rotation (en Mo)
+  log_max_size_mb: 100
+
+# =============================================================================
+# SÉCURITÉ
+# =============================================================================
+security:
+  # Activer l'isolation via bubblewrap/firejail
+  enable_isolation: true
+  
+  # Outil d'isolation préféré (bubblewrap ou firejail)
+  isolation_tool: "bubblewrap"
+  
+  # Activer la détection d'anomalies
+  enable_anomaly_detection: true
+  
+  # Seuil de confiance pour la détection d'anomalies (0.0 - 1.0)
+  anomaly_threshold: 0.85
+  
+  # Limites de ressources
+  resource_limits:
+    max_cpu_percent: 80
+    max_memory_mb: 4096
+    max_processes: 50
+    max_open_files: 1024
+  
+  # Actions nécessitant une confirmation explicite (quorum)
+  quorum_actions:
+    - "system_modification"
+    - "file_deletion"
+    - "network_configuration"
+    - "user_management"
+    - "api_key_access"
+  
+  # Timeout pour les opérations sensibles (en secondes)
+  sensitive_operation_timeout: 30
+  
+  # Nombre maximum de tentatives avant verrouillage
+  max_login_attempts: 5
+  
+  # Durée de verrouillage après échecs (en minutes)
+  lockout_duration_minutes: 15
+
+# =============================================================================
+# API MISTRAL
+# =============================================================================
+mistral:
+  # URL de base de l'API
+  base_url: "https://api.mistral.ai/v1"
+  
+  # Modèle par défaut
+  default_model: "mistral-large-latest"
+  
+  # Timeout des requêtes (en secondes)
+  request_timeout: 30
+  
+  # Nombre maximum de retries en cas d'échec
+  max_retries: 3
+  
+  # Délai entre les retries (en secondes)
+  retry_delay: 1
+  
+  # Limite de débit (requêtes par minute)
+  rate_limit_per_minute: 60
+  
+  # Activer la validation stricte des réponses JSON
+  strict_json_validation: true
+  
+  # Activer la rotation des tokens (si disponible)
+  enable_token_rotation: false
+
+# =============================================================================
+# CONNEXION MOBILE
+# =============================================================================
+mobile:
+  # Activer le support mobile
+  enabled: true
+  
+  # Méthode de connexion (ssh ou api)
+  connection_method: "ssh"
+  
+  # Configuration SSH
+  ssh:
+    # Port SSH par défaut
+    port: 22
+    
+    # Timeout de connexion (en secondes)
+    timeout: 30
+    
+    # Chemin vers la clé privée
+    key_path: "~/.ssh/nexus_mobile"
+    
+    # Utilisateur par défaut sur l'appareil mobile
+    username: "u0_a123"  # Termux par défaut
+    
+    # Activer la compression
+    compression: true
+    
+    # Keep-alive interval (en secondes)
+    keepalive_interval: 60
+  
+  # Configuration API REST (alternative à SSH)
+  api:
+    # URL de base du serveur mobile
+    base_url: "http://localhost:8080"
+    
+    # Port du serveur
+    port: 8080
+    
+    # Timeout des requêtes
+    timeout: 30
+    
+    # Token d'authentification (stocké dans keyring)
+    auth_token_key: "nexus_mobile_token"
+
+# =============================================================================
+# INTENT PARSER
+# =============================================================================
+intent_parser:
+  # Langue par défaut pour l'analyse
+  default_language: "fr"
+  
+  # Langues supportées
+  supported_languages:
+    - "fr"
+    - "en"
+    - "de"
+    - "es"
+  
+  # Activer le cache des analyses sémantiques
+  enable_semantic_cache: true
+  
+  # Taille du cache (nombre d'entrées)
+  cache_size: 1000
+  
+  # Modèle spaCy à utiliser
+  spacy_model: "fr_core_news_md"
+  
+  # Seuil de confiance minimum pour l'analyse
+  confidence_threshold: 0.7
+
+# =============================================================================
+# TASK ORCHESTRATOR
+# =============================================================================
+orchestrator:
+  # Nombre maximum de tâches parallèles
+  max_parallel_tasks: 10
+  
+  # Timeout par défaut pour les tâches (en secondes)
+  default_task_timeout: 300
+  
+  # Activer la priorisation des tâches
+  enable_prioritization: true
+  
+  # Niveaux de priorité
+  priority_levels:
+    critical: 1
+    high: 2
+    normal: 3
+    low: 4
+  
+  # Activer le retry automatique pour les tâches échouées
+  enable_auto_retry: true
+  
+  # Nombre maximum de retries
+  max_retries: 3
+
+# =============================================================================
+# EXECUTION ENGINE
+# =============================================================================
+execution:
+  # Type de pool d'exécution (thread ou process)
+  pool_type: "thread"
+  
+  # Nombre maximum de workers
+  max_workers: 8
+  
+  # Activer le rollback automatique
+  enable_auto_rollback: true
+  
+  # Délai entre les vérifications de statut (en millisecondes)
+  status_check_interval_ms: 100
+  
+  # Activer la journalisation détaillée des exécutions
+  detailed_execution_logging: true
+
+# =============================================================================
+# STOCKAGE DES DONNÉES SENSIBLES
+# =============================================================================
+storage:
+  # Type de stockage (sqlite ou leveldb)
+  type: "sqlite"
+  
+  # Chemin vers la base de données
+  database_path: "~/.nexus_core/data.db"
+  
+  # Activer le chiffrement de la base de données
+  encrypt_database: true
+  
+  # Clé de chiffrement (stockée dans keyring)
+  encryption_key_name: "nexus_db_key"
+  
+  # Nettoyage automatique des anciennes données (en jours)
+  auto_cleanup_days: 30
+
+# =============================================================================
+# INTERFACE UTILISATEUR
+# =============================================================================
+ui:
+  # Type d'interface (cli, tui, gui)
+  type: "cli"
+  
+  # Couleurs activées
+  enable_colors: true
+  
+  # Afficher les barres de progression
+  show_progress_bars: true
+  
+  # Confirmation avant les actions critiques
+  confirm_critical_actions: true
+  
+  # Temps d'affichage des notifications (en secondes)
+  notification_timeout: 5
