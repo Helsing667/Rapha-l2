@@ -103,6 +103,9 @@ class NexusCore:
                     key_path=mobile_config.get('key_path'),
                 )
             )
+            self.logger.info("Mobile client initialized (iOS support disabled by default)")
+        else:
+            self.logger.info("Mobile support disabled - running in local-only mode")
         
         # State
         self.running = False

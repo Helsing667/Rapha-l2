@@ -96,7 +96,9 @@ mistral:
 # =============================================================================
 mobile:
   # Activer le support mobile
-  enabled: true
+  # NOTE: Pour iOS (iPhone), laissez ceci sur false car Termux n'est pas disponible
+  # Vous pouvez utiliser Nexus Core uniquement sur votre ordinateur Ubuntu
+  enabled: false
   
   # Méthode de connexion (ssh ou api)
   connection_method: "ssh"
