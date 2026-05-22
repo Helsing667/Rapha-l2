@@ -87,10 +87,18 @@ class NexusCore:
         self.mobile_client: Optional[MobileClient] = None
         if self.config.get('mobile', {}).get('enabled', False):
             mobile_config = self.config.get('mobile', {}).get('ssh', {})
+            
+            # Get host IP - use phone_ip if available, otherwise fallback to host
+            host = mobile_config.get('host', 'localhost')
+            # Override with phone_ip if explicitly set (and not placeholder)
+            phone_ip = self.config.get('mobile', {}).get('phone_ip', '')
+            if phone_ip and phone_ip != 'PHONE_IP_ADDRESS':
+                host = phone_ip
+            
             self.mobile_client = MobileClient(
                 config=MobileConnectionConfig(
-                    host=mobile_config.get('host', 'localhost'),
-                    port=mobile_config.get('port', 22),
+                    host=host,
+                    port=mobile_config.get('port', 8022),
                     username=mobile_config.get('username', 'u0_a123'),
                     key_path=mobile_config.get('key_path'),
                 )
