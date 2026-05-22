@@ -1,1 +1,13 @@
-Nothing should be ignored based on the provided file changes, as they only include source/config files (README.md, setup.sh) without any build artifacts, dependencies, or temporary files.
+```
+# Environment
+.env
+.env.local
+.env.*
+
+# Logs and temp files
+*.log
+*.tmp
+
+# Editors
+.vscode/
+```

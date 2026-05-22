@@ -1,6 +1,7 @@
 #!/bin/bash
 # Script d'installation automatique de Nexus Core
 # Ce script installe toutes les dépendances système et Python requises
+# Crée automatiquement un environnement virtuel pour contourner PEP 668
 
 set -e  # Arrêter en cas d'erreur
 
@@ -29,10 +30,10 @@ if [[ "$(printf '%s\n' "$REQUIRED_PYTHON" "$PYTHON_VERSION" | sort -V | head -n1
     exit 1
 fi
 
-echo "[1/5] Mise à jour des dépôts..."
+echo "[1/6] Mise à jour des dépôts..."
 sudo apt-get update -qq
 
-echo "[2/5] Installation des dépendances système..."
+echo "[2/6] Installation des dépendances système..."
 sudo apt-get install -y -qq \
     bubblewrap \
     libsodium-dev \
@@ -46,27 +47,34 @@ sudo apt-get install -y -qq \
     git \
     curl
 
-echo "[3/5] Création de l'environnement virtuel..."
-if [ ! -d ".venv" ]; then
-    python3 -m venv .venv
-    echo "Environnement virtuel créé dans .venv/"
+echo "[3/6] Suppression de l'ancien environnement virtuel (si existant)..."
+if [ -d ".venv" ]; then
+    rm -rf .venv
+    echo "Ancien environnement supprimé"
 else
-    echo "Environnement virtuel déjà existant"
+    echo "Aucun environnement existant à supprimer"
 fi
 
-echo "[4/5] Activation et installation des dépendances Python..."
+echo "[4/6] Création d'un nouvel environnement virtuel (.venv)..."
+python3 -m venv .venv
+echo "Environnement virtuel créé avec succès dans .venv/"
+
+echo "[5/6] Activation et installation des dépendances Python..."
 source .venv/bin/activate
 pip install --upgrade pip -q
 pip install -e . -q
+echo "Dépendances Python installées dans l'environnement virtuel"
 
 # Installation optionnelle du support mobile
+echo "[6/6] Support mobile (optionnel)"
 read -p "Installer le support mobile (paramiko, asyncssh) ? (y/n) " -n 1 -r
 echo
 if [[ $REPLY =~ ^[Yy]$ ]]; then
-    echo "[5/5] Installation des dépendances mobiles..."
+    echo "Installation des dépendances mobiles..."
     pip install -e ".[mobile]" -q
+    echo "Support mobile installé"
 else
-    echo "[5/5] Support mobile ignoré"
+    echo "Support mobile ignoré"
 fi
 
 echo ""
@@ -74,7 +82,8 @@ echo "========================================="
 echo "Installation terminée avec succès !"
 echo "========================================="
 echo ""
-echo "Pour activer l'environnement virtuel :"
+echo "L'environnement virtuel est DÉJÀ ACTIF."
+echo "Pour le réactiver dans un nouveau terminal :"
 echo "  source .venv/bin/activate"
 echo ""
 echo "Pour configurer la clé API Mistral :"
