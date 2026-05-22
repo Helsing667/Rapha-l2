@@ -82,6 +82,8 @@ Ce script vous guidera pour :
 
 ### Configuration manuelle de la connexion mobile
 
+**Note importante pour les utilisateurs iOS (iPhone) :** Termux n'est pas disponible sur iOS. Le support mobile est actuellement conçu pour Android avec Termux. Si vous utilisez un iPhone, laissez `mobile.enabled` sur `false` dans `config.yaml` et utilisez Nexus Core uniquement en mode local sur votre ordinateur Ubuntu. Toutes les fonctionnalités locales et l'intégration avec l'API Mistral fonctionneront normalement.
+
 1. **Trouver l'IP de votre téléphone :**
    - Sur Termux : `ifconfig` ou `ip addr`
    - Dans les paramètres Android : Paramètres > À propos > État > Adresse IP
@@ -90,6 +92,7 @@ Ce script vous guidera pour :
 2. **Modifier `config.yaml` :**
    ```yaml
    mobile:
+     enabled: true  # Mettre à false si vous n'avez pas de terminal SSH mobile (ex: iPhone)
      phone_ip: "192.168.1.XX"  # Remplacez par l'IP réelle de votre téléphone
      ssh:
        host: "192.168.1.XX"    # Doit correspondre à phone_ip
