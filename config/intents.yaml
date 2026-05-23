@@ -1,0 +1,183 @@
+# Configuration des intents pour Nexus Core
+# Chaque intent représente une action ou commande que l'assistant peut exécuter
+
+intents:
+  # Intent: Informations système
+  - name: "system_info"
+    description: "Afficher les informations système (CPU, RAM, disque)"
+    examples:
+      - "Donne-moi les infos système"
+      - "Quelles sont les spécifications de la machine ?"
+      - "Montre-moi l'état du système"
+      - "System information please"
+      - "Zeige mir die Systeminformationen"
+    category: "system"
+    requires_confirmation: false
+
+  # Intent: Gestion des fichiers
+  - name: "file_management"
+    description: "Gérer les fichiers (copier, déplacer, supprimer)"
+    examples:
+      - "Copie ce fichier vers le dossier documents"
+      - "Déplace le fichier test.txt dans backup"
+      - "Supprime le fichier temporaire"
+      - "Copy this file to the documents folder"
+      - "Verschiebe diese Datei in den Backup-Ordner"
+    category: "files"
+    requires_confirmation: true
+
+  # Intent: Recherche de fichiers
+  - name: "file_search"
+    description: "Rechercher des fichiers par nom ou contenu"
+    examples:
+      - "Trouve tous les fichiers PDF"
+      - "Cherche le document rapport_2024"
+      - "Où est le fichier config.yaml ?"
+      - "Find all PDF files"
+      - "Suche nach der Datei bericht.pdf"
+    category: "files"
+    requires_confirmation: false
+
+  # Intent: Surveillance des processus
+  - name: "process_monitoring"
+    description: "Surveiller et gérer les processus"
+    examples:
+      - "Liste les processus en cours"
+      - "Quel processus utilise le plus de CPU ?"
+      - "Tue le processus python"
+      - "List running processes"
+      - "Zeige die laufenden Prozesse an"
+    category: "system"
+    requires_confirmation: true
+
+  # Intent: Gestion réseau
+  - name: "network_management"
+    description: "Gérer les connexions et configurations réseau"
+    examples:
+      - "Affiche les interfaces réseau"
+      - "Redémarre la connexion WiFi"
+      - "Quelle est mon adresse IP ?"
+      - "Show network interfaces"
+      - "Zeige die Netzwerkschnittstellen"
+    category: "network"
+    requires_confirmation: true
+
+  # Intent: Météo
+  - name: "weather"
+    description: "Obtenir les prévisions météorologiques"
+    examples:
+      - "Quelle météo pour demain ?"
+      - "Donne-moi les prévisions pour Paris"
+      - "Il va pleuvoir aujourd'hui ?"
+      - "What's the weather forecast?"
+      - "Wie wird das Wetter morgen?"
+    category: "information"
+    requires_confirmation: false
+
+  # Intent: Actualités
+  - name: "news"
+    description: "Récupérer les dernières actualités"
+    examples:
+      - "Donne-moi les dernières nouvelles"
+      - "Quelles sont les news du jour ?"
+      - "Résume l'actualité"
+      - "Give me the latest news"
+      - "Was sind die aktuellen Nachrichten?"
+    category: "information"
+    requires_confirmation: false
+
+  # Intent: Calculs
+  - name: "calculator"
+    description: "Effectuer des calculs mathématiques"
+    examples:
+      - "Calcule 15 fois 27"
+      - "Combien font 145 plus 892 ?"
+      - "Fais la racine carrée de 144"
+      - "Calculate 15 times 27"
+      - "Berechne 145 plus 892"
+    category: "utilities"
+    requires_confirmation: false
+
+  # Intent: Traduction
+  - name: "translate"
+    description: "Traduire du texte entre différentes langues"
+    examples:
+      - "Traduis ceci en anglais"
+      - "Comment dire bonjour en allemand ?"
+      - "Traduis ce paragraphe en espagnol"
+      - "Translate this to French"
+      - "Übersetze das ins Englische"
+    category: "utilities"
+    requires_confirmation: false
+
+  # Intent: Agenda
+  - name: "calendar"
+    description: "Gérer les événements et rappels"
+    examples:
+      - "Ajoute un rendez-vous demain à 14h"
+      - "Quels sont mes événements cette semaine ?"
+      - "Rappelle-moi d'acheter du lait"
+      - "Add a meeting for tomorrow at 2pm"
+      - "Erinnere mich daran, Milch zu kaufen"
+    category: "personal"
+    requires_confirmation: false
+
+  # Intent: Emails
+  - name: "email"
+    description: "Envoyer et gérer les emails"
+    examples:
+      - "Envoie un email à Jean"
+      - "Lis mes nouveaux messages"
+      - "Réponds au dernier email"
+      - "Send an email to John"
+      - "Sende eine E-Mail an Maria"
+    category: "communication"
+    requires_confirmation: true
+
+  # Intent: Contrôle domotique
+  - name: "home_automation"
+    description: "Contrôler les appareils connectés"
+    examples:
+      - "Allume la lumière du salon"
+      - "Baisse le chauffage à 19 degrés"
+      - "Ferme les volets"
+      - "Turn on the living room lights"
+      - "Schalte das Licht im Wohnzimmer ein"
+    category: "iot"
+    requires_confirmation: false
+
+  # Intent: Musique
+  - name: "music"
+    description: "Contrôler la lecture musicale"
+    examples:
+      - "Joue du jazz"
+      - "Mets la playlist détente"
+      - "Pause la musique"
+      - "Play some rock music"
+      - "Spiele klassische Musik"
+    category: "entertainment"
+    requires_confirmation: false
+
+  # Intent: Aide
+  - name: "help"
+    description: "Obtenir de l'aide sur les commandes disponibles"
+    examples:
+      - "Que peux-tu faire ?"
+      - "Montre-moi les commandes disponibles"
+      - "Aide-moi"
+      - "What can you do?"
+      - "Wie kann ich dir helfen?"
+    category: "general"
+    requires_confirmation: false
+
+  # Intent: Arrêt
+  - name: "shutdown"
+    description: "Arrêter ou redémarrer le système"
+    examples:
+      - "Éteins l'ordinateur"
+      - "Redémarre la machine"
+      - "Mets le système en veille"
+      - "Shut down the computer"
+      - "Starte den Computer neu"
+    category: "system"
+    requires_confirmation: true
