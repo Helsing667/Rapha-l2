@@ -15,12 +15,13 @@ import argparse
 import asyncio
 import signal
 import sys
+import os
 from typing import Optional, Dict, Any
 from pathlib import Path
 import logging
 import yaml
 
-from core.intent_parser import IntentParser, ParsedIntent
+from core.intent_parser import IntentParser, ParsedIntent, IntentType
 from core.task_orchestrator import TaskOrchestrator, TaskGraph
 from core.execution_engine import ExecutionEngine
 from core.security_layer import SecurityLayer
@@ -28,6 +29,13 @@ from utils.logging_config import setup_logging
 from utils.encryption import EncryptionManager
 from utils.api_wrapper import MistralAPIWrapper
 from utils.mobile_client import MobileClient, MobileConnectionConfig
+
+try:
+    from mistralai.client import Mistral as MistralSDK
+    MISTRAL_SDK_AVAILABLE = True
+except ImportError:
+    MISTRAL_SDK_AVAILABLE = False
+    MistralSDK = None
 
 
 class NexusCore:
@@ -79,9 +87,19 @@ class NexusCore:
         
         # Initialize Mistral API if key available
         self.mistral_api: Optional[MistralAPIWrapper] = None
-        api_key = self.encryption_manager.retrieve_secret('mistral_api_key')
+        self.mistral_sdk: Optional[Any] = None
+        
+        # Try to get API key from environment variable first, then from keyring
+        api_key = os.environ.get('MISTRAL_API_KEY') or self.encryption_manager.retrieve_secret('mistral_api_key')
         if api_key:
             self.mistral_api = MistralAPIWrapper(api_key=api_key)
+            if MISTRAL_SDK_AVAILABLE:
+                self.mistral_sdk = MistralSDK(api_key=api_key)
+                self.logger.info("Mistral SDK initialized")
+            else:
+                self.logger.warning("Mistral SDK not available, using API wrapper only")
+        else:
+            self.logger.info("Mistral API not configured (no API key found)")
         
         # Initialize mobile client if enabled
         self.mobile_client: Optional[MobileClient] = None
@@ -165,6 +183,52 @@ class NexusCore:
         
         self.logger.info("Nexus Core stopped")
     
+    async def _call_mistral_api(self, user_message: str, intent_context: Dict[str, Any]) -> str:
+        """
+        Call Mistral API to generate a response for low-confidence or special intents.
+        
+        Args:
+            user_message: The original user message
+            intent_context: Context from the intent parser
+            
+        Returns:
+            Mistral's response in French
+        """
+        if not self.mistral_sdk:
+            return "Je suis désolé, mais l'API Mistral n'est pas configurée. Veuillez définir la variable d'environnement MISTRAL_API_KEY."
+        
+        try:
+            # Build context-aware prompt
+            intent_type = intent_context.get('intent_type', 'unknown')
+            confidence = intent_context.get('confidence', 0.0)
+            
+            system_prompt = (
+                "Tu es un assistant IA utile et poli. Tu réponds toujours en français. "
+                f"Contexte: L'intent détecté est '{intent_type}' avec une confiance de {confidence:.2f}. "
+                "Si l'intent est une blague (joke), raconte une blague courte et drôle en français. "
+                "Si c'est une salutation (greeting), réponds de manière amicale et naturelle en français."
+            )
+            
+            response = await asyncio.to_thread(
+                self.mistral_sdk.chat.complete,
+                model="mistral-small-latest",
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_message}
+                ],
+                temperature=0.7,
+                max_tokens=500,
+            )
+            
+            if response and response.choices and len(response.choices) > 0:
+                return response.choices[0].message.content
+            else:
+                return "Je suis désolé, je n'ai pas pu générer de réponse."
+                
+        except Exception as e:
+            self.logger.exception(f"Error calling Mistral API: {e}")
+            return f"Erreur lors de l'appel à Mistral: {str(e)}"
+
     async def process_request(self, request: str) -> Dict[str, Any]:
         """
         Process a user request through the full pipeline.
@@ -179,6 +243,29 @@ class NexusCore:
         
         # Step 1: Parse intent
         parsed_intent = self.intent_parser.parse(request)
+        
+        # Check if we need to call Mistral API (low confidence or special intents)
+        needs_mistral = (
+            parsed_intent.confidence < self.intent_parser.confidence_threshold or
+            parsed_intent.intent_type in [IntentType.JOKE, IntentType.GREETING]
+        )
+        
+        if needs_mistral and self.mistral_sdk:
+            self.logger.info(f"Calling Mistral API for intent: {parsed_intent.intent_type.value} (confidence: {parsed_intent.confidence:.2f})")
+            mistral_response = await self._call_mistral_api(
+                request,
+                {
+                    "intent_type": parsed_intent.intent_type.value,
+                    "confidence": parsed_intent.confidence,
+                }
+            )
+            return {
+                "success": True,
+                "source": "mistral",
+                "response": mistral_response,
+                "intent": parsed_intent.intent_type.value,
+                "confidence": parsed_intent.confidence,
+            }
         
         if parsed_intent.intent_type.value == 'unknown':
             return {
@@ -289,9 +376,14 @@ class NexusCore:
                 
                 # Display result
                 if result['success']:
-                    print(f"\n✓ Request completed successfully")
-                    print(f"  Intent: {result['intent']}")
-                    print(f"  Tasks executed: {len(result.get('results', []))}\n")
+                    # Check if response came from Mistral
+                    if result.get('source') == 'mistral' and 'response' in result:
+                        print(f"\n🤖 Réponse Mistral: {result['response']}")
+                        print(f"  Intent détecté: {result['intent']} (confiance: {result.get('confidence', 0):.2f})\n")
+                    else:
+                        print(f"\n✓ Request completed successfully")
+                        print(f"  Intent: {result['intent']}")
+                        print(f"  Tasks executed: {len(result.get('results', []))}\n")
                 else:
                     print(f"\n✗ Request failed")
                     print(f"  Error: {result.get('error', 'Unknown error')}\n")
