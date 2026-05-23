@@ -255,3 +255,44 @@ ui:
   
   # Temps d'affichage des notifications (en secondes)
   notification_timeout: 5
+
+# =============================================================================
+# iOS INTEGRATION
+# =============================================================================
+ios:
+  # Module activation (set to true after running enable_ios.sh)
+  enabled: false
+  
+  # Communication settings
+  protocol: "websocket"  # websocket or mqtt
+  host: "0.0.0.0"
+  port: 8443
+  use_tls: true
+  
+  # TLS certificates
+  cert_path: "~/.nexus_core/certs/server.crt"
+  key_path: "~/.nexus_core/certs/server.key"
+  ca_cert_path: "~/.nexus_core/certs/ca.crt"
+  client_cert_path: "~/.nexus_core/certs/client.crt"
+  client_key_path: "~/.nexus_core/certs/client.key"
+  
+  # MQTT specific (if using MQTT)
+  mqtt_topic_prefix: "nexus/ios"
+  
+  # Synchronization
+  sync_method: "nas"  # nas, icloud, or direct
+  sync_direction: "bidirectional"
+  conflict_resolution: "newest_wins"
+  pending_dir: "~/nexus_core/ios_pending"
+  
+  # Security
+  enable_attestation: true
+  enable_device_check: true
+  enable_sandboxing: true
+  max_reconnect_attempts: 5
+  
+  # Resource quotas
+  quotas:
+    max_cpu_percent: 50
+    max_memory_mb: 512
+    max_network_kb_per_min: 10240
