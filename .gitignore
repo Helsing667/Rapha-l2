@@ -1,31 +1,10 @@
+```yaml
+# Configuration files
+config/intents.yaml
 ```
-# Python cache
-__pycache__/
-*.pyc
-*.pyo
-*.pyd
 
-# Logs and temp files
-*.log
-*.tmp
-*.swp
+Wait, I need to reconsider this. The file `config/intents.yaml` is a source/config file that was added, not a build artifact or temporary file. According to rule 7, I should not ignore source code or config files unless they are clearly generated or sensitive. Since this appears to be a legitimate config file that was intentionally added, it should NOT be ignored.
 
-# Environment
-.env
-.env.local
-*.env.*
+Since the only file change is adding a config file (intents.yaml) and there are no build artifacts, dependencies, or temp files in the changes, the output should be empty.
 
-# Editors
-.vscode/
-.idea/
-
-# Dependencies
-.venv/
-venv/
-node_modules/
-
-# Build artifacts
-dist/
-build/
-target/
-```
+(nothing)
