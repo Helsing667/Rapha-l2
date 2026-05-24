@@ -21,6 +21,7 @@ from dataclasses import dataclass
 import logging
 import signal
 import psutil
+from mistralai import Mistral
 
 from core.task_orchestrator import Task, TaskStatus, TaskGraph, TaskPriority
 
@@ -334,7 +335,10 @@ class ExecutionEngine:
         path = task.parameters.get('path', '')
         
         if not path:
-            return {'exists': False, 'error': 'No path specified'}
+            result = {'exists': False, 'error': 'No path specified'}
+            response = self.generate_response('file_check', "Aucun chemin de fichier spécifié")
+            result['ai_response'] = response
+            return result
         
         exists = os.path.isfile(path)
         stats = None
@@ -347,11 +351,14 @@ class ExecutionEngine:
                 'permissions': oct(stat.st_mode)[-3:],
             }
         
-        return {
+        result = {
             'exists': exists,
             'path': path,
             'stats': stats,
         }
+        response = self.generate_response('file_check', f"Vérification du fichier: {path}")
+        result['ai_response'] = response
+        return result
     
     def _handle_permission_check(self, task: Task) -> Dict[str, Any]:
         """Check permissions for a file or operation."""
@@ -359,7 +366,10 @@ class ExecutionEngine:
         required_perms = task.parameters.get('required_permissions', ['read'])
         
         if not path:
-            return {'allowed': False, 'error': 'No path specified'}
+            result = {'allowed': False, 'error': 'No path specified'}
+            response = self.generate_response('permission_check', "Aucun chemin spécifié pour la vérification des permissions")
+            result['ai_response'] = response
+            return result
         
         allowed = True
         missing_perms = []
@@ -376,11 +386,14 @@ class ExecutionEngine:
             allowed = False
             missing_perms.append('execute')
         
-        return {
+        result = {
             'allowed': allowed,
             'path': path,
             'missing_permissions': missing_perms,
         }
+        response = self.generate_response('permission_check', f"Vérification des permissions pour: {path}")
+        result['ai_response'] = response
+        return result
     
     def _handle_file_operation(self, task: Task) -> Dict[str, Any]:
         """Execute a file operation (copy, move, delete, etc.)."""
@@ -442,7 +455,10 @@ class ExecutionEngine:
         if not recipient:
             return {'valid': False, 'error': 'No recipient specified'}
         
-        return {'valid': True, 'recipient': recipient}
+        result = {'valid': True, 'recipient': recipient}
+        response = self.generate_response('validate_contact', f"Validation du contact: {recipient}")
+        result['ai_response'] = response
+        return result
     
     def _handle_format_message(self, task: Task) -> Dict[str, Any]:
         """Format a message for sending."""
@@ -455,7 +471,10 @@ class ExecutionEngine:
             'timestamp': time.time(),
         }
         
-        return {'formatted': True, 'message': formatted}
+        result = {'formatted': True, 'message': formatted}
+        response = self.generate_response('format_message', f"Formatage du message: {text[:50]}...")
+        result['ai_response'] = response
+        return result
     
     def _handle_check_file(self, task: Task) -> Dict[str, Any]:
         """Check an attachment file."""
@@ -473,12 +492,18 @@ class ExecutionEngine:
         if size > max_size:
             return {'valid': False, 'error': f'File too large: {size} bytes'}
         
-        return {'valid': True, 'size': size}
+        result = {'valid': True, 'size': size}
+        response = self.generate_response('check_file', f"Vérification du fichier: {attachment}")
+        result['ai_response'] = response
+        return result
     
     def _handle_connect_mobile(self, task: Task) -> Dict[str, Any]:
         """Establish connection to mobile device."""
         # Placeholder - actual implementation would use SSH
-        return {'connected': True, 'method': 'ssh'}
+        result = {'connected': True, 'method': 'ssh'}
+        response = self.generate_response('connect_mobile', "Connexion à l'appareil mobile")
+        result['ai_response'] = response
+        return result
     
     def _handle_send_message(self, task: Task) -> Dict[str, Any]:
         """Send a message via mobile device."""
@@ -486,15 +511,21 @@ class ExecutionEngine:
         message = task.parameters.get('message_text', '')
         
         # Placeholder - actual implementation would send via mobile
-        return {
+        result = {
             'sent': True,
             'recipient': recipient,
             'message': message[:50] + '...' if len(message) > 50 else message,
         }
+        response = self.generate_response('send_message', f"Envoi du message à {recipient}")
+        result['ai_response'] = response
+        return result
     
     def _handle_verify_delivery(self, task: Task) -> Dict[str, Any]:
         """Verify message delivery."""
-        return {'delivered': True}
+        result = {'delivered': True}
+        response = self.generate_response('verify_delivery', "Vérification de la livraison du message")
+        result['ai_response'] = response
+        return result
     
     def _handle_validate_command(self, task: Task) -> Dict[str, Any]:
         """Validate a shell command is safe to execute."""
@@ -513,7 +544,10 @@ class ExecutionEngine:
             if pattern in command.lower():
                 return {'safe': False, 'error': f'Dangerous pattern detected: {pattern}'}
         
-        return {'safe': True, 'command': command}
+        result = {'safe': True, 'command': command}
+        response = self.generate_response('validate_command', f"Validation de la commande: {command}")
+        result['ai_response'] = response
+        return result
     
     def _handle_check_sudo(self, task: Task) -> Dict[str, Any]:
         """Check if sudo privileges are available."""
@@ -523,9 +557,15 @@ class ExecutionEngine:
                 capture_output=True,
                 timeout=5,
             )
-            return {'sudo_available': result.returncode == 0}
+            output = {'sudo_available': result.returncode == 0}
+            response = self.generate_response('check_sudo', "Vérification des privilèges sudo")
+            output['ai_response'] = response
+            return output
         except Exception:
-            return {'sudo_available': False}
+            output = {'sudo_available': False}
+            response = self.generate_response('check_sudo', "Échec de la vérification sudo")
+            output['ai_response'] = response
+            return output
     
     def _handle_execute_shell(self, task: Task) -> Dict[str, Any]:
         """Execute a shell command safely."""
@@ -544,16 +584,25 @@ class ExecutionEngine:
                 timeout=task.timeout or 60,
             )
             
-            return {
+            output = {
                 'success': result.returncode == 0,
                 'stdout': result.stdout,
                 'stderr': result.stderr,
                 'returncode': result.returncode,
             }
+            response = self.generate_response('execute_shell', f"Exécution de la commande: {command}")
+            output['ai_response'] = response
+            return output
         except subprocess.TimeoutExpired:
-            return {'success': False, 'error': 'Command timed out'}
+            output = {'success': False, 'error': 'Command timed out'}
+            response = self.generate_response('execute_shell', "La commande a expiré")
+            output['ai_response'] = response
+            return output
         except Exception as e:
-            return {'success': False, 'error': str(e)}
+            output = {'success': False, 'error': str(e)}
+            response = self.generate_response('execute_shell', f"Erreur lors de l'exécution: {str(e)}")
+            output['ai_response'] = response
+            return output
     
     def _handle_verify_output(self, task: Task) -> Dict[str, Any]:
         """Verify shell command output."""
@@ -561,49 +610,108 @@ class ExecutionEngine:
         actual = task.parameters.get('actual_output', '')
         
         if expected and expected not in actual:
-            return {'verified': False, 'error': 'Expected output not found'}
+            result = {'verified': False, 'error': 'Expected output not found'}
+            response = self.generate_response('verify_output', "La sortie attendue n'a pas été trouvée")
+            result['ai_response'] = response
+            return result
         
-        return {'verified': True}
+        result = {'verified': True}
+        response = self.generate_response('verify_output', "La sortie a été vérifiée avec succès")
+        result['ai_response'] = response
+        return result
     
     def _handle_check_ssh(self, task: Task) -> Dict[str, Any]:
         """Check SSH connection to mobile device."""
         # Placeholder for actual SSH check
-        return {'ssh_available': True}
+        result = {'ssh_available': True}
+        response = self.generate_response('check_ssh', "Vérification de la connexion SSH")
+        result['ai_response'] = response
+        return result
     
     def _handle_ssh_auth(self, task: Task) -> Dict[str, Any]:
         """Authenticate via SSH."""
         # Placeholder for actual SSH auth
-        return {'authenticated': True}
+        result = {'authenticated': True}
+        response = self.generate_response('ssh_auth', "Authentification SSH réussie")
+        result['ai_response'] = response
+        return result
     
     def _handle_remote_execute(self, task: Task) -> Dict[str, Any]:
         """Execute command on remote mobile device."""
         command = task.parameters.get('command', '')
         
         # Placeholder - actual implementation would use SSH
-        return {'executed': True, 'command': command}
+        result = {'executed': True, 'command': command}
+        response = self.generate_response('remote_execute', f"Exécution distante: {command}")
+        result['ai_response'] = response
+        return result
     
     def _handle_remote_verify(self, task: Task) -> Dict[str, Any]:
         """Verify remote execution result."""
-        return {'verified': True}
+        result = {'verified': True}
+        response = self.generate_response('remote_verify', "Vérification de l'exécution distante")
+        result['ai_response'] = response
+        return result
     
     def _handle_file_restore(self, task: Task) -> Dict[str, Any]:
         """Restore a file from backup."""
         backup_path = task.parameters.get('backup_path', '')
         
         # Placeholder for actual restore logic
-        return {'restored': True, 'path': backup_path}
+        result = {'restored': True, 'path': backup_path}
+        response = self.generate_response('file_restore', f"Restauration du fichier: {backup_path}")
+        result['ai_response'] = response
+        return result
     
     def _handle_disconnect(self, task: Task) -> Dict[str, Any]:
         """Disconnect from mobile device."""
-        return {'disconnected': True}
+        result = {'disconnected': True}
+        response = self.generate_response('disconnect', "Déconnexion de l'appareil mobile")
+        result['ai_response'] = response
+        return result
     
     def _handle_generic(self, task: Task) -> Dict[str, Any]:
         """Handle generic/unknown actions."""
-        return {'handled': True, 'action': task.action}
+        result = {'handled': True, 'action': task.action}
+        response = self.generate_response('generic', f"Action générique: {task.action}")
+        result['ai_response'] = response
+        return result
     
     def _handle_noop(self, task: Task) -> Dict[str, Any]:
         """No-operation handler."""
-        return {'noop': True}
+        result = {'noop': True}
+        response = self.generate_response('noop', "Aucune opération")
+        result['ai_response'] = response
+        return result
+    
+    def generate_response(self, intent: str, user_message: str) -> str:
+        """
+        Generate a response using Mistral AI API.
+        
+        Args:
+            intent: The validated intent name
+            user_message: The user's message
+            
+        Returns:
+            Textual response in French
+        """
+        api_key = os.environ.get("MISTRAL_API_KEY")
+        if not api_key:
+            raise ValueError("MISTRAL_API_KEY environment variable is not set")
+        
+        client = Mistral(api_key=api_key)
+        
+        prompt = f"Intent: {intent}\nMessage utilisateur: {user_message}\n\nRéponds en français de manière appropriée à cet intent."
+        
+        response = client.chat.complete(
+            model="mistral-small-latest",
+            messages=[
+                {"role": "system", "content": "Tu es un assistant utile. Réponds toujours en français."},
+                {"role": "user", "content": prompt}
+            ]
+        )
+        
+        return response.choices[0].message.content
     
     def get_resource_usage(self) -> Dict[str, Any]:
         """Get current resource usage statistics."""
