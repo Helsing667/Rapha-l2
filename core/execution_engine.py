@@ -21,7 +21,7 @@ from dataclasses import dataclass
 import logging
 import signal
 import psutil
-from mistralai import Mistral
+from mistralai.client import MistralClient
 
 from core.task_orchestrator import Task, TaskStatus, TaskGraph, TaskPriority
 
@@ -699,7 +699,7 @@ class ExecutionEngine:
         if not api_key:
             raise ValueError("MISTRAL_API_KEY environment variable is not set")
         
-        client = Mistral(api_key=api_key)
+        client = MistralClient(api_key=os.environ["MISTRAL_API_KEY"])
         
         prompt = f"Intent: {intent}\nMessage utilisateur: {user_message}\n\nRéponds en français de manière appropriée à cet intent."
         
