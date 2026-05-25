@@ -31,11 +31,11 @@ from utils.api_wrapper import MistralAPIWrapper
 from utils.mobile_client import MobileClient, MobileConnectionConfig
 
 try:
-    from mistralai.client import Mistral as MistralSDK
+    from mistralai.client import MistralClient
     MISTRAL_SDK_AVAILABLE = True
 except ImportError:
     MISTRAL_SDK_AVAILABLE = False
-    MistralSDK = None
+    MistralClient = None
 
 
 class NexusCore:
@@ -94,7 +94,7 @@ class NexusCore:
         if api_key:
             self.mistral_api = MistralAPIWrapper(api_key=api_key)
             if MISTRAL_SDK_AVAILABLE:
-                self.mistral_sdk = MistralSDK(api_key=api_key)
+                self.mistral_sdk = MistralClient(api_key=api_key)
                 self.logger.info("Mistral SDK initialized")
             else:
                 self.logger.warning("Mistral SDK not available, using API wrapper only")
@@ -210,7 +210,7 @@ class NexusCore:
             )
             
             response = await asyncio.to_thread(
-                self.mistral_sdk.chat.complete,
+                self.mistral_sdk.chat,
                 model="mistral-small-latest",
                 messages=[
                     {"role": "system", "content": system_prompt},
@@ -378,7 +378,7 @@ class NexusCore:
                 if result['success']:
                     # Check if response came from Mistral
                     if result.get('source') == 'mistral' and 'response' in result:
-                        print(f"\n🤖 Réponse Mistral: {result['response']}")
+                        print(f"\nNexus : {result.get('response') or result.get('ai_response')}")
                         print(f"  Intent détecté: {result['intent']} (confiance: {result.get('confidence', 0):.2f})\n")
                     else:
                         print(f"\n✓ Request completed successfully")
