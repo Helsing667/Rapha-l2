@@ -21,7 +21,7 @@ from dataclasses import dataclass
 import logging
 import signal
 import psutil
-from mistralai.client import MistralClient
+from mistralai import MistralClient
 
 from core.task_orchestrator import Task, TaskStatus, TaskGraph, TaskPriority
 
