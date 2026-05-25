@@ -703,7 +703,7 @@ class ExecutionEngine:
         
         prompt = f"Intent: {intent}\nMessage utilisateur: {user_message}\n\nRéponds en français de manière appropriée à cet intent."
         
-        response = client.chat.complete(
+        response = client.chat(
             model="mistral-small-latest",
             messages=[
                 {"role": "system", "content": "Tu es un assistant utile. Réponds toujours en français."},
