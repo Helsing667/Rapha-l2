@@ -20,6 +20,10 @@ from typing import Optional, Dict, Any
 from pathlib import Path
 import logging
 import yaml
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 from core.intent_parser import IntentParser, ParsedIntent, IntentType
 from core.task_orchestrator import TaskOrchestrator, TaskGraph
@@ -228,6 +232,53 @@ class NexusCore:
         except Exception as e:
             self.logger.exception(f"Error calling Mistral API: {e}")
             return f"Erreur lors de l'appel à Mistral: {str(e)}"
+    
+    async def _call_mistral_api_via_wrapper(self, user_message: str, intent_context: Dict[str, Any]) -> str:
+        """
+        Call Mistral API using the wrapper (fallback when SDK is not available).
+        
+        Args:
+            user_message: The original user message
+            intent_context: Context from the intent parser
+            
+        Returns:
+            Mistral's response in French
+        """
+        if not self.mistral_api:
+            return "Je suis désolé, mais l'API Mistral n'est pas configurée."
+        
+        try:
+            # Build context-aware prompt
+            intent_type = intent_context.get('intent_type', 'unknown')
+            confidence = intent_context.get('confidence', 0.0)
+            
+            system_prompt = (
+                "Tu es un assistant IA utile et poli. Tu réponds toujours en français. "
+                f"Contexte: L'intent détecté est '{intent_type}' avec une confiance de {confidence:.2f}. "
+                "Si l'intent est une blague (joke), raconte une blague courte et drôle en français. "
+                "Si c'est une salutation (greeting), réponds de manière amicale et naturelle en français."
+            )
+            
+            # Use wrapper's chat_completion method
+            response = await asyncio.to_thread(
+                self.mistral_api.chat_completion,
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_message}
+                ],
+                model="mistral-small-latest",
+                temperature=0.7,
+                max_tokens=500,
+            )
+            
+            if response.success and response.data:
+                return response.data['choices'][0]['message']['content']
+            else:
+                return f"Je suis désolé, je n'ai pas pu générer de réponse: {response.error or 'Erreur inconnue'}"
+                
+        except Exception as e:
+            self.logger.exception(f"Error calling Mistral API via wrapper: {e}")
+            return f"Erreur lors de l'appel à Mistral: {str(e)}"
 
     async def process_request(self, request: str) -> Dict[str, Any]:
         """
@@ -245,27 +296,57 @@ class NexusCore:
         parsed_intent = self.intent_parser.parse(request)
         
         # Check if we need to call Mistral API (low confidence or special intents)
+        # For greetings and jokes, ALWAYS use Mistral for natural conversation
         needs_mistral = (
             parsed_intent.confidence < self.intent_parser.confidence_threshold or
-            parsed_intent.intent_type in [IntentType.JOKE, IntentType.GREETING]
+            parsed_intent.intent_type in [IntentType.JOKE, IntentType.GREETING, IntentType.UNKNOWN]
         )
         
-        if needs_mistral and self.mistral_sdk:
-            self.logger.info(f"Calling Mistral API for intent: {parsed_intent.intent_type.value} (confidence: {parsed_intent.confidence:.2f})")
-            mistral_response = await self._call_mistral_api(
-                request,
-                {
-                    "intent_type": parsed_intent.intent_type.value,
+        # Force Mistral for conversational intents even if SDK is not available, use wrapper
+        if needs_mistral:
+            if self.mistral_sdk:
+                self.logger.info(f"Calling Mistral API for intent: {parsed_intent.intent_type.value} (confidence: {parsed_intent.confidence:.2f})")
+                mistral_response = await self._call_mistral_api(
+                    request,
+                    {
+                        "intent_type": parsed_intent.intent_type.value,
+                        "confidence": parsed_intent.confidence,
+                    }
+                )
+                return {
+                    "success": True,
+                    "source": "mistral",
+                    "response": mistral_response,
+                    "intent": parsed_intent.intent_type.value,
                     "confidence": parsed_intent.confidence,
                 }
-            )
-            return {
-                "success": True,
-                "source": "mistral",
-                "response": mistral_response,
-                "intent": parsed_intent.intent_type.value,
-                "confidence": parsed_intent.confidence,
-            }
+            elif self.mistral_api:
+                # Fallback to API wrapper if SDK not available
+                self.logger.info(f"Calling Mistral API via wrapper for intent: {parsed_intent.intent_type.value}")
+                mistral_response = await self._call_mistral_api_via_wrapper(
+                    request,
+                    {
+                        "intent_type": parsed_intent.intent_type.value,
+                        "confidence": parsed_intent.confidence,
+                    }
+                )
+                return {
+                    "success": True,
+                    "source": "mistral",
+                    "response": mistral_response,
+                    "intent": parsed_intent.intent_type.value,
+                    "confidence": parsed_intent.confidence,
+                }
+            else:
+                # No Mistral API available, return fallback response
+                self.logger.warning("Mistral API not configured, using fallback response")
+                return {
+                    "success": True,
+                    "source": "fallback",
+                    "response": parsed_intent.parameters.get("fallback_response", "Je n'ai pas compris votre demande. Pourriez-vous reformuler ?"),
+                    "intent": parsed_intent.intent_type.value,
+                    "confidence": parsed_intent.confidence,
+                }
         
         if parsed_intent.intent_type.value == 'unknown':
             return {
@@ -376,9 +457,9 @@ class NexusCore:
                 
                 # Display result
                 if result['success']:
-                    # Check if response came from Mistral
-                    if result.get('source') == 'mistral' and 'response' in result:
-                        print(f"\nNexus : {result.get('response') or result.get('ai_response')}")
+                    # Check if response came from Mistral or fallback
+                    if result.get('source') in ['mistral', 'fallback'] and 'response' in result:
+                        print(f"\nNexus : {result.get('response')}")
                         print(f"  Intent détecté: {result['intent']} (confiance: {result.get('confidence', 0):.2f})\n")
                     else:
                         print(f"\n✓ Request completed successfully")
